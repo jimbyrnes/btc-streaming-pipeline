@@ -9,12 +9,14 @@ from confluent_kafka import Consumer, KafkaError, KafkaException
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, StreamingResponse
 
-BOOTSTRAP_SERVERS = os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
-TOPIC_RAW    = os.environ.get("KAFKA_TOPIC_RAW",    "btc_trades_raw")
-TOPIC_ALERTS = os.environ.get("KAFKA_TOPIC_ALERTS", "btc_alerts")
+BOOTSTRAP_SERVERS   = os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
+TOPIC_RAW           = os.environ.get("KAFKA_TOPIC_RAW",    "btc_trades_raw")
+TOPIC_ALERTS        = os.environ.get("KAFKA_TOPIC_ALERTS", "btc_alerts")
+SPIKE_THRESHOLD_PCT = float(os.environ.get("SPIKE_THRESHOLD_PCT", "0.5"))
 
 _lock = threading.Lock()
 _subs: dict[str, list[queue.Queue]] = {"trades": [], "alerts": []}
+_prev_alert_price: float | None = None
 
 
 def _consume(topic: str, channel: str) -> None:
@@ -33,10 +35,26 @@ def _consume(topic: str, channel: str) -> None:
                 raise KafkaException(msg.error())
             continue
         data = json.loads(msg.value())
+        if channel == "alerts":
+            data = _enrich_alert(data)
         with _lock:
             dead = [q for q in _subs[channel] if not _try_put(q, data)]
             for q in dead:
                 _subs[channel].remove(q)
+
+
+def _enrich_alert(data: dict) -> dict:
+    global _prev_alert_price
+    price = data.get("avg_price", 0)
+    if _prev_alert_price is not None:
+        change_pct = abs(price - _prev_alert_price) / _prev_alert_price * 100
+        data["price_change_pct"] = round(change_pct, 3)
+        data["spike"] = change_pct >= SPIKE_THRESHOLD_PCT
+    else:
+        data["price_change_pct"] = 0.0
+        data["spike"] = False
+    _prev_alert_price = price
+    return data
 
 
 def _try_put(q: queue.Queue, data: dict) -> bool:

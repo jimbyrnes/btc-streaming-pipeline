@@ -78,6 +78,12 @@
     .alert-card.up      { border-left-color: var(--green); }
     .alert-card.down    { border-left-color: var(--red); }
     .alert-card.neutral { border-left-color: var(--blue); }
+    .alert-card.spike   { border-left-color: var(--orange); animation: slide-in 0.25s ease, pulse-border 1s ease 3; }
+    @keyframes pulse-border {
+      0%, 100% { box-shadow: none; }
+      50%       { box-shadow: 0 0 8px var(--orange); }
+    }
+    .spike-badge { font-size: 0.68rem; color: var(--orange); float: right; }
 
     @keyframes slide-in {
       from { opacity: 0; transform: translateY(-6px); }
@@ -204,9 +210,12 @@ function addAlert(a) {
   prevAlertPrice = price;
 
   const card = document.createElement('div');
-  card.className = `alert-card ${trend}`;
+  card.className = `alert-card ${trend}${a.spike ? ' spike' : ''}`;
+  const spikeBadge = a.spike
+    ? `<span class="spike-badge">&#9889; ${a.price_change_pct.toFixed(2)}%</span>`
+    : '';
   card.innerHTML =
-    `<div class="alert-window">${a.window_start.slice(11,19)} &#8594; ${a.window_end.slice(11,19)}</div>` +
+    `<div class="alert-window">${a.window_start.slice(11,19)} &#8594; ${a.window_end.slice(11,19)}${spikeBadge}</div>` +
     `<div class="alert-price">$${price.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>` +
     `<div class="alert-stats"><span>${a.trade_count} trades</span><span>${a.total_volume} BTC vol</span></div>`;
 
