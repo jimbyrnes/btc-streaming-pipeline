@@ -23,6 +23,9 @@ Kafka topic: btc_alerts        ← one summary message per 10s window
   └──▶ dashboard/app.py        ← FastAPI + SSE → browser dashboard
 ```
 
+<img width="1904" height="885" alt="image" src="https://github.com/user-attachments/assets/32f22e2f-1d53-44c4-8926-492a0725700d" />
+
+
 ## Stack
 
 | Layer | Technology |
