@@ -15,10 +15,11 @@ producer = Producer({"bootstrap.servers": BOOTSTRAP_SERVERS})
 
 def fake_trade() -> dict:
     return {
-        "exchange": "coinbase-sim",
-        "symbol": "BTC-USD",
-        "price": round(random.uniform(60_000, 70_000), 2),
-        "quantity": round(random.uniform(0.001, 0.5), 6),
+        "exchange":  "coinbase-sim",
+        "symbol":    "BTC-USD",
+        "price":     round(random.uniform(60_000, 70_000), 2),
+        "quantity":  round(random.uniform(0.001, 0.5), 6),
+        "side":      random.choice(["BUY", "SELL"]),
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
